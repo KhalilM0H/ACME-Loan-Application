@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acme Loan Application</title>
+</head>
+<body>
+    <h1>Acme Loan Application Portal</h1>
+
+    <h2>Apply for a Loan</h2>
+    <form id="apply-form">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required><br>
+        <label for="address">Address:</label>
+        <input type="text" id="address" name="address" required><br>
+        <label for="zipcode">Zipcode:</label>
+        <input type="text" id="zipcode" name="zipcode" required><br>
+        <button type="submit">Submit</button>
+    </form>
+
+    <h2>Check Application Status</h2>
+    <form id="status-form">
+        <label for="application-id">Application ID:</label>
+        <input type="text" id="application-id" name="application-id" required><br>
+        <button type="submit">Check Status</button>
+        <p id="status-result"></p>
+    </form>
+
+    <h2>Change Application Status</h2>
+    <form id="change-status-form">
+        <label for="application-id-change">Application ID:</label>
+        <input type="text" id="application-id-change" name="application-id-change" required><br>
+        <label for="new-status">New Status:</label>
+        <select id="new-status" name="new-status" required>
+            <option value="received">Received</option>
+            <option value="processing">Processing</option>
+            <option value="accepted">Accepted</option>
+            <option value="rejected">Rejected</option>
+        </select><br>
+        <button type="submit">Update Status</button>
+    </form>
+
+    <h2>Add a Note for Processing</h2>
+    <form id="add-note-form">
+        <label for="application-id-note">Application ID:</label>
+        <input type="text" id="application-id-note" name="application-id-note" required><br>
+        <label for="phase">Phase:</label>
+        <input type="text" id="phase" name="phase" required><br>
+        <label for="task">Task:</label>
+        <input type="text" id="task" name="task" required><br>
+        <label for="message">Message:</label>
+        <input type="text" id="message" name="message" required><br>
+        <button type="submit">Add Note</button>
+    </form>
+
+    <h2>Reject an Application</h2>
+    <form id="reject-form">
+        <label for="application-id-reject">Application ID:</label>
+        <input type="text" id="application-id-reject" name="application-id-reject" required><br>
+        <label for="reason">Reason:</label>
+        <input type="text" id="reason" name="reason" required><br>
+        <button type="submit">Reject Application</button>
+    </form>
+
+    <script>
+        document.getElementById('apply-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const address = document.getElementById('address').value;
+            const zipcode = document.getElementById('zipcode').value;
+
+            const response = await fetch('/apply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, address, zipcode })
+            });
+
+            const result = await response.json();
+            alert(result.message + (result.application_id ? ` Application ID: ${result.application_id}` : ''));
+        });
+
+        document.getElementById('status-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const applicationId = document.getElementById('application-id').value;
+
+            const response = await fetch(`/status/${applicationId}`);
+            const result = await response.json();
+
+            let statusMessage = `Status: ${result.status}, Notes: ${JSON.stringify(result.notes)}`;
+            if (result.status === "rejected") {
+                statusMessage += `, Reason: ${result.rejection_reason}`;
+            }
+
+            document.getElementById('status-result').textContent = statusMessage;
+        });
+
+        document.getElementById('change-status-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const applicationId = document.getElementById('application-id-change').value;
+            const newStatus = document.getElementById('new-status').value;
+
+            const response = await fetch(`/status/${applicationId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            const result = await response.json();
+            alert(result.message || result.error);
+        });
+
+        document.getElementById('add-note-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const applicationId = document.getElementById('application-id-note').value;
+            const phase = document.getElementById('phase').value;
+            const task = document.getElementById('task').value;
+            const message = document.getElementById('message').value;
+
+            const response = await fetch(`/subphase/${applicationId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phase, task, message })
+            });
+
+            const result = await response.json();
+            alert(result.message || result.error);
+        });
+
+        document.getElementById('reject-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const applicationId = document.getElementById('application-id-reject').value;
+            const reason = document.getElementById('reason').value;
+
+            const response = await fetch(`/reject/${applicationId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason })
+            });
+
+            const result = await response.json();
+            alert(result.message || result.error);
+        });
+    </script>
+</body>
+</html>
